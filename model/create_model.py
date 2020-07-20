@@ -43,22 +43,25 @@ Y_test = lb.transform(Y_test)
 with open(LABELS_FILE, 'wb') as f:
     pickle.dump(lb, f)
 
-# Constructing the model
+# Creating the model
 model = keras.Sequential()
 model.add(Conv2D(20, (5, 5), padding="same", input_shape=(IMAGE_SHAPE[0], IMAGE_SHAPE[1], 1), activation="relu"))
 model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
-model.add(Conv2D(50, (5, 5), padding="same", activation="relu"))
+model.add(Conv2D(50, (5, 5), padding="same", activation='relu'))
 model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
 model.add(keras.layers.Flatten())
-model.add(Dense(256, activation="relu"))
-model.add(Dense(32, activation='relu'))
+
+model.add(Dense(400, activation="relu"))
+model.add(keras.layers.Dropout(0.3))
+
 model.add(Dense(nr_labels, activation="softmax"))
 
 model.compile(loss=keras.losses.BinaryCrossentropy(), optimizer='adam', metrics=['accuracy'])
 
-model.fit(X_train, Y_train, validation_data=(X_test, Y_test), batch_size=16, epochs=7, verbose=1)
+e_stop = keras.callbacks.EarlyStopping(patience=10, mode='min', min_delta=0.001, monitor='val_loss')
+model.fit(X_train, Y_train, validation_data=(X_test, Y_test), batch_size=16, epochs=10, verbose=1, callbacks=[e_stop])
 
 model.save(MODEL_FILE)
 
