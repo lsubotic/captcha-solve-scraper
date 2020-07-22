@@ -9,7 +9,7 @@ $ pip install -r requirements.txt
 ```
 After that, you should be all set up to run the scripts - for detailed information, see below.
 #### - Getting the model ready
-First, use ``` $ python split_and_save``` to split the images into letters that the model will use as input data. Then ``` $ python create_model.py``` to train and save the model. From then on, the model will be loaded in to the Scraper to solve the CAPTCHA with the **load_model.py** module.
+First, use ``` $ python split_and_save.py``` to split the images into letters that the model will use as input data. Then ``` $ python create_model.py``` to train and save the model. From then on, the model will be loaded in to the Scraper to solve the CAPTCHA with the **load_model.py** module.
 
 
 ## Overview
