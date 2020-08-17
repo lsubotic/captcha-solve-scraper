@@ -1,14 +1,13 @@
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
 from keras.layers.convolutional import Conv2D, MaxPooling2D
-from keras.layers import Dense
-import tensorflow as tf
+from keras.layers import Dense, Dropout
 import keras
 import numpy as np
 import pickle
 import cv2
 import os
-
 # constants
 from constants import *
 
@@ -28,43 +27,49 @@ for label in os.listdir(LETTERS_FOLDER):
         data.append(image)
         labels.append(label)
 
-# Normalize the data so every value lies between zero and one
+# Normalize the data so every value lies between zero and one and convert to numpy array
 data = np.array(data, dtype='float') / 255
 labels = np.array(labels)
 
-# Create a training-test split
-(X_train, X_test, Y_train, Y_test) = train_test_split(data, labels, test_size=0.25, random_state=0)
 # Binarize the labels
-lb = LabelBinarizer().fit(Y_train)
-Y_train = lb.transform(Y_train)
-Y_test = lb.transform(Y_test)
-
+lb = LabelBinarizer().fit(labels)
 # Save the binarization
 with open(LABELS_FILE, 'wb') as f:
     pickle.dump(lb, f)
 
+# Convert labels to float an shuffle data and labels in the same way
+# No train_test_split - validating with k-fold cross validation
+labels = lb.transform(labels).astype('float32')
+labels = shuffle(labels, random_state=0)
+data = shuffle(data, random_state=0)
+
 # Creating the model
-model = keras.Sequential()
-model.add(Conv2D(20, (5, 5), padding="same", input_shape=(IMAGE_SHAPE[0], IMAGE_SHAPE[1], 1), activation="relu"))
-model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+def build_model():
+    model = keras.Sequential()
+    model.add(Conv2D(20, (5, 5), padding="same", input_shape=(IMAGE_SHAPE[0], IMAGE_SHAPE[1], 1), activation="relu"))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
-model.add(Conv2D(50, (5, 5), padding="same", activation='relu'))
-model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+    model.add(Conv2D(40, (5, 5), padding="same", activation="tanh"))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+    
+    model.add(Conv2D(64, (5, 5), padding="same", activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
-model.add(keras.layers.Flatten())
+    model.add(keras.layers.Flatten())
+    
+    model.add(Dense(128, activation="tanh"))
+    model.add(Dropout(0.5))
 
-model.add(Dense(400, activation="relu"))
-model.add(keras.layers.Dropout(0.3))
+    model.add(Dense(128, activation="tanh"))
+    model.add(Dropout(0.3))
 
-model.add(Dense(nr_labels, activation="softmax"))
+    model.add(Dense(nr_labels, activation="softmax"))
 
-model.compile(loss=keras.losses.BinaryCrossentropy(), optimizer='adam', metrics=['accuracy'])
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
 
-e_stop = keras.callbacks.EarlyStopping(patience=10, mode='min', min_delta=0.001, monitor='val_loss')
-model.fit(X_train, Y_train, validation_data=(X_test, Y_test), batch_size=16, epochs=10, verbose=1, callbacks=[e_stop])
+
+model = build_model()
+model.fit(data, labels, batch_size=8, epochs=6, verbose=1)
 
 model.save(MODEL_FILE)
-
-
-
-
