@@ -282,7 +282,7 @@ def save_products_info():
     products_counter = 0
     proxies_cookies = {}
 
-    # File sa kolacicima
+    # Cookies file
     if os.path.exists('cookies.pkl'):
         proxies_cookies = pickle.load(open('cookies.pkl', 'rb'))  # Load the dictionary from the pickle file.
 
@@ -295,7 +295,7 @@ def save_products_info():
     if not os.path.exists('predict_wrong'):
         os.makedirs('predict_wrong')
 
-    # Gruva MultiThreading
+    # Using multhitreading
     threads = []
     asins = set(pd.read_csv('asins.csv')['asin'])
     for asin in asins:
